@@ -7,6 +7,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser())
+const { checkEmail } = require('./helpers')
 
 app.set("view engine", "ejs");
 
@@ -100,16 +101,30 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
-  const id = generateRandomString();
-  const user = {
-    id,
-    email,
-    password
+  if(email && password) {
+    if(checkEmail(users, email)) {
+      res.statusCode = 400;
+      res.send("Email already registered " + res.statusCode);
+
+    } else {
+      const id = generateRandomString();
+      const user = {
+        id,
+        email,
+        password
+      }
+      users[id] = user;
+      res.cookie('user_id', id);
+      console.log(users);
+      res.redirect('/urls');  
+
+    } 
+
+  } else {
+    res.statusCode = 400;
+    res.send(res.statusCode);
   }
-  users[id] = user;
-  res.cookie('user_id', id);
-  console.log(users);
-  res.redirect('/urls');         
+       
 });
 
 app.listen(PORT, () => {
