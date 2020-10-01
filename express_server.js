@@ -15,6 +15,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "aaa bbb ggg"
+  }
+}
+
 function generateRandomString() {
   return Math.random().toString(36).substring(2,8);
 
@@ -33,17 +46,17 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { username: req.cookies["username"] ? req.cookies["username"] : null, urls: urlDatabase };
+  const templateVars = { user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] ? req.cookies["username"] : null};
+  const templateVars = { user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null};
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { username: req.cookies["username"] ? req.cookies["username"] : null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  const templateVars = { user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
@@ -82,7 +95,21 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render('registration', {username: req.cookies["username"] ? req.cookies["username"] : null});         
+  res.render('registration', {user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null});         
+});
+
+app.post("/register", (req, res) => {
+  const {email, password} = req.body;
+  const id = generateRandomString();
+  const user = {
+    id,
+    email,
+    password
+  }
+  users[id] = user;
+  res.cookie('user_id', id);
+  console.log(users);
+  res.redirect('/urls');         
 });
 
 app.listen(PORT, () => {
