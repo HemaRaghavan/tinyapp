@@ -85,13 +85,25 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const name = req.body.username;
-  res.cookie('username', name);
-  res.redirect('/urls');         
+  const {email, password} = req.body;
+  const user = checkEmail(users, email);
+  if(user) {
+    if (user.password === password) {
+      res.cookie('user_id', user.id);
+      res.redirect('/urls'); 
+    } else {
+      res.status(403).send("Wrong password");
+    }
+
+  } else {
+    res.status(403).send("Couldn't find your account");
+  }
+  
+           
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');         
 });
 
@@ -103,8 +115,7 @@ app.post("/register", (req, res) => {
   const {email, password} = req.body;
   if(email && password) {
     if(checkEmail(users, email)) {
-      res.statusCode = 400;
-      res.send("Email already registered " + res.statusCode);
+      res.status(400).send("Email already registered");
 
     } else {
       const id = generateRandomString();
@@ -122,7 +133,7 @@ app.post("/register", (req, res) => {
 
   } else {
     res.statusCode = 400;
-    res.send(res.statusCode);
+    res.status(400).send("Enter an email and password");
   }
        
 });
