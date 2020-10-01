@@ -127,6 +127,10 @@ app.post("/register", (req, res) => {
        
 });
 
+app.get("/login", (req, res) => {
+  res.render('login', {user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null});         
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
