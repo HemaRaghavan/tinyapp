@@ -15,7 +15,7 @@ app.use(
     ],
   })
 );
-const { checkEmail,urlsForUser } = require('./helpers');
+const { getUserByEmail,urlsForUser } = require('./helpers');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
@@ -26,18 +26,18 @@ const urlDatabase = {
   "9sm5xK": {longURL: "http://www.google.com", userID: "5xn69m"}
 };
 
-const users = { 
+const users = {
   "8rvcfl": {
-    id: "8rvcfl", 
-    email: "user@example.com", 
+    id: "8rvcfl",
+    email: "user@example.com",
     password: bcrypt.hashSync("purple-monkey-dinosaur", saltRounds)
   },
- "5xn69m": {
-    id: "5xn69m", 
-    email: "user2@example.com", 
+  "5xn69m": {
+    id: "5xn69m",
+    email: "user2@example.com",
     password: bcrypt.hashSync("aaa bbb ggg", saltRounds)
   }
-}
+};
 
 function generateRandomString() {
   return Math.random().toString(36).substring(2,8);
@@ -82,7 +82,7 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
 
   } else {
-    res.redirect('/login')
+    res.redirect('/login');
   }
   
 });
@@ -91,7 +91,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
     const tinyURL = req.params.shortURL;
-    if(urlDatabase[tinyURL]){
+    if (urlDatabase[tinyURL]) {
       if (urlDatabase[tinyURL].userID === newUser) {
         const templateVars = { user: users[newUser], shortURL: tinyURL, longURL: urlDatabase[tinyURL].longURL};
         res.render("urls_show", templateVars);
@@ -119,7 +119,7 @@ app.post("/urls", (req, res) => {
   if (user) {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {"longURL" : req.body.longURL, "userID" : user};
-    res.redirect(`/urls/${shortURL}`);  
+    res.redirect(`/urls/${shortURL}`);
 
   } else {
     res.send("Create account or Sign in to continue");
@@ -128,7 +128,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL]){
+  if (urlDatabase[req.params.shortURL]) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
   } else {
@@ -159,7 +159,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   const newUser = req.session.user_id;
-  if(newUser) {
+  if (newUser) {
     if (urlDatabase[shortURL].userID === newUser) {
       urlDatabase[shortURL].longURL = req.body.newlongURL;
       res.redirect('/urls');
@@ -177,12 +177,11 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
-  const user = checkEmail(users, email);
-  if(user) {
-    if (bcrypt.compareSync(password, user.password )) {
-      //res.cookie('user_id', user.id);
-      req.session.user_id = user.id;
-      res.redirect('/urls'); 
+  const user = getUserByEmail(email, users);
+  if (user) {
+    if (bcrypt.compareSync(password, users[user].password)) {
+      req.session.user_id = users[user].id;
+      res.redirect('/urls');
     } else {
       res.status(403).send("Wrong password");
     }
@@ -196,7 +195,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   req.session['user_id'] = null;
-  res.redirect('/urls');         
+  res.redirect('/urls');     
 });
 
 app.get("/register", (req, res) => {
@@ -204,7 +203,7 @@ app.get("/register", (req, res) => {
   if (newUser) {
     res.redirect('/urls');
   } else {
-    res.render('registration', {user: null}); 
+    res.render('registration', {user: null});
 
   }
           
@@ -212,8 +211,8 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
-  if(email && password) {
-    if(checkEmail(users, email)) {
+  if (email && password) {
+    if (getUserByEmail(email, users)) {
       res.status(400).send("Email already registered");
 
     } else {
@@ -223,14 +222,13 @@ app.post("/register", (req, res) => {
         id,
         email,
         password : hashedPassword
-      }
+      };
       users[id] = user;
       req.session.user_id = id;
-      //res.cookie('user_id', id);
       console.log(users);
-      res.redirect('/urls');  
+      res.redirect('/urls');
 
-    } 
+    }
 
   } else {
     res.statusCode = 400;
