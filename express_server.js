@@ -7,7 +7,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser())
-const { checkEmail } = require('./helpers')
+const { checkEmail,urlsForUser } = require('./helpers')
 
 app.set("view engine", "ejs");
 
@@ -35,7 +35,12 @@ function generateRandomString() {
 }
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -47,8 +52,16 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null, urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    const newUrls = urlsForUser(newUser, urlDatabase);
+    const templateVars = { user: users[newUser], urls: newUrls };
+    res.render("urls_index", templateVars);
+
+  } else {
+    res.send("Create account or Sign in to continue");
+  }
+  
 });
 
 app.get("/urls/new", (req, res) => {
@@ -64,14 +77,29 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL};
-  res.render("urls_show", templateVars);
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    const tinyURL = req.params.shortURL;
+    if (urlDatabase[tinyURL].userID === newUser) {
+      const templateVars = { user: users[newUser], shortURL: tinyURL, longURL: urlDatabase[tinyURL].longURL};
+      res.render("urls_show", templateVars);
+
+    } else {
+      res.send("Access not allowed");
+    }
+    
+
+  } else {
+    res.send("Create account or Sign in to continue");
+  }
+  
 });
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  const user = req.cookies["user_id"];
+  urlDatabase[shortURL] = {"longURL" : req.body.longURL, "userID" : user};
   res.redirect(`/urls/${shortURL}`);         
 });
 
@@ -81,14 +109,41 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    if (urlDatabase[req.params.shortURL].userID === newUser) {
+      delete urlDatabase[req.params.shortURL];
+      res.redirect('/urls');
+  
+    } else {
+      res.send("Access not allowed");
+    }
+
+  } else {
+    res.send("Create account or Sign in to continue");
+  }
+  
+
+  
 });
 
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  urlDatabase[shortURL].longURL = req.body.newlongURL;
-  res.redirect('/urls');
+  const newUser = req.cookies["user_id"];
+  if(newUser) {
+    if (urlDatabase[shortURL].userID === newUser) {
+      urlDatabase[shortURL].longURL = req.body.newlongURL;
+      res.redirect('/urls');
+    } else {
+      res.send("Access not allowed");
+    }
+
+  } else {
+    res.send("Create account or Sign in to continue");
+
+  }
+  
+  
 });
 
 app.post("/login", (req, res) => {
