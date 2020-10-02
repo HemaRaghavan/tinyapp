@@ -18,7 +18,7 @@ app.use(
 const { getUserByEmail,urlsForUser } = require('./helpers');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
-
+// Setting ejs as the template engine
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -53,14 +53,7 @@ app.get("/", (req, res) => {
   }
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
+//a list of URLs the user has created
 app.get("/urls", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
@@ -75,6 +68,7 @@ app.get("/urls", (req, res) => {
   
 });
 
+// a form for new URL
 app.get("/urls/new", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
@@ -87,6 +81,7 @@ app.get("/urls/new", (req, res) => {
   
 });
 
+// The short URL (for the given ID) and update option
 app.get("/urls/:shortURL", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
@@ -113,6 +108,7 @@ app.get("/urls/:shortURL", (req, res) => {
   
 });
 
+//generates a short URL, saves it, and associates it with the user
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
   const user = req.session.user_id;
@@ -127,6 +123,7 @@ app.post("/urls", (req, res) => {
          
 });
 
+//redirects to the corresponding long URL
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
@@ -137,6 +134,7 @@ app.get("/u/:shortURL", (req, res) => {
   
 });
 
+//if user is logged in and owns the URL for the given ID: deletes the URL
 app.post("/urls/:shortURL/delete", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
@@ -156,6 +154,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   
 });
 
+//if user is logged in and owns the URL for the given ID: updates the URL
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   const newUser = req.session.user_id;
@@ -175,6 +174,7 @@ app.post("/urls/:id", (req, res) => {
   
 });
 
+//login if email and password params match an existing user
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
   const user = getUserByEmail(email, users);
@@ -193,11 +193,13 @@ app.post("/login", (req, res) => {
            
 });
 
+//logout 
 app.post("/logout", (req, res) => {
   req.session['user_id'] = null;
   res.redirect('/urls');     
 });
 
+// a form for creating an account
 app.get("/register", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
@@ -209,6 +211,7 @@ app.get("/register", (req, res) => {
           
 });
 
+// creates a new user
 app.post("/register", (req, res) => {
   const {email, password} = req.body;
   if (email && password) {
@@ -237,6 +240,7 @@ app.post("/register", (req, res) => {
        
 });
 
+//login form
 app.get("/login", (req, res) => {
   const newUser = req.session.user_id;
   if (newUser) {
