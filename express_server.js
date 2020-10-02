@@ -59,7 +59,8 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars);
 
   } else {
-    res.send("Create account or Sign in to continue");
+    res.render("urls_index", {user: null});
+    
   }
   
 });
@@ -80,32 +81,50 @@ app.get("/urls/:shortURL", (req, res) => {
   const newUser = req.cookies["user_id"];
   if (newUser) {
     const tinyURL = req.params.shortURL;
-    if (urlDatabase[tinyURL].userID === newUser) {
-      const templateVars = { user: users[newUser], shortURL: tinyURL, longURL: urlDatabase[tinyURL].longURL};
-      res.render("urls_show", templateVars);
+    if(urlDatabase[tinyURL]){
+      if (urlDatabase[tinyURL].userID === newUser) {
+        const templateVars = { user: users[newUser], shortURL: tinyURL, longURL: urlDatabase[tinyURL].longURL};
+        res.render("urls_show", templateVars);
+  
+      } else {
+        res.send("Access not allowed");
+      }
 
     } else {
-      res.send("Access not allowed");
+      res.send("Invalid Id");
     }
+    
     
 
   } else {
     res.send("Create account or Sign in to continue");
+    
   }
   
 });
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
-  const shortURL = generateRandomString();
   const user = req.cookies["user_id"];
-  urlDatabase[shortURL] = {"longURL" : req.body.longURL, "userID" : user};
-  res.redirect(`/urls/${shortURL}`);         
+  if (user) {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {"longURL" : req.body.longURL, "userID" : user};
+    res.redirect(`/urls/${shortURL}`);  
+
+  } else {
+    res.send("Create account or Sign in to continue");
+  }
+         
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]){
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.send("Invalid Id");
+  }
+  
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -170,7 +189,14 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render('registration', {user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null});         
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    res.redirect('/urls');
+  } else {
+    res.render('registration', {user: null}); 
+
+  }
+          
 });
 
 app.post("/register", (req, res) => {
@@ -201,7 +227,14 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  res.render('login', {user: req.cookies["user_id"] ? users[req.cookies["user_id"]] : null});         
+  const newUser = req.cookies["user_id"];
+  if (newUser) {
+    res.redirect('/urls');
+  } else {
+    res.render('login', {user: null});
+
+  }
+           
 });
 
 app.listen(PORT, () => {
